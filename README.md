@@ -1,1 +1,1 @@
-This our project on surplus food redistribution.
+This our project on surplus food redistribution platform.
