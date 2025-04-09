@@ -1,4 +1,8 @@
-function Welcome({ setCurrentPage }) {
+import { useNavigate } from "react-router-dom";
+
+function Welcome() {
+  const navigate = useNavigate(); // Hook for navigation
+
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-[#cdcfc9]">
       {/* Shifted Right Content */}
@@ -13,14 +17,14 @@ function Welcome({ setCurrentPage }) {
         {/* Buttons */}
         <div className="flex gap-7">
           <button
-            onClick={() => setCurrentPage("donorLogin")}
+            onClick={() => navigate("/donor-login")}
             className="w-64 bg-[#410c31] text-white px-6 py-3 rounded-lg font-semibold shadow-lg transition-transform duration-200 hover:scale-110 hover:bg-[#2b081f]"
           >
             I am a Donor
           </button>
 
           <button
-            onClick={() => setCurrentPage("receiverLogin")}
+            onClick={() => navigate("/receiver-login")}
             className="w-64 bg-[#0e2843] text-white px-6 py-3 rounded-lg font-semibold shadow-lg transition-transform duration-200 hover:scale-110 hover:bg-[#091b2c]"
           >
             I am a Receiver

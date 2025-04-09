@@ -1,82 +1,122 @@
-import { FaSearch, FaCog, FaUser, FaHandHoldingHeart, FaChartLine, FaClock } from "react-icons/fa";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import DonorSidebar from "../Components/DonorSidebar";
+import axios from "axios";
 
-function DonorHome() {
+const DonorHome = () => {
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    donations_made: 0,
+    people_served: 0,
+    meals_served_today: 0,
+    average_rating: 0,
+    recent_donations: [],
+  });
+
+  useEffect(() => {
+    const donorId = localStorage.getItem("donor_id");
+    const token = localStorage.getItem("token");
+
+    if (!donorId || !token) {
+      console.log("No donor ID or token found. Redirecting to login.");
+      navigate("/donor-login"); // ✅ Updated this line
+      return;
+    }
+
+    const fetchDashboardStats = async () => {
+      try {
+        const response = await axios.get(
+          "http://127.0.0.1:8000/api/donor/dashboard/",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setStats(response.data);
+      } catch (err) {
+        console.error("Error fetching dashboard stats:", err);
+        if (err.response?.status === 401) {
+          alert("Session expired. Please log in again.");
+          navigate("/donor-login");
+        }
+      }
+    };
+
+    fetchDashboardStats();
+  }, [navigate]);
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* ✅ Top Navbar */}
-      <nav className="bg-white shadow-md py-4 px-6 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-[#410c31]">HopePlates</h1>
-        <div className="space-x-6">
-          <a href="#" className="text-gray-700 hover:text-[#410c31]">Home</a>
-          <a href="#" className="text-gray-700 hover:text-[#410c31]">Add Donation</a>
-          <a href="#" className="text-gray-700 hover:text-[#410c31]">Impact Tracker</a>
-          <a href="#" className="text-gray-700 hover:text-[#410c31]">Community Feed</a>
-        </div>
-        <div className="space-x-4 flex items-center">
-          <FaSearch className="text-gray-700 cursor-pointer" />
-          <FaCog className="text-gray-700 cursor-pointer" />
-          <FaUser className="text-gray-700 cursor-pointer" />
-        </div>
-      </nav>
-
-      {/* ✅ Dashboard Section */}
-      <section className="p-6">
-        <div className="grid grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
-            <FaHandHoldingHeart className="text-[#410c31] text-4xl mr-4" />
-            <div>
-              <h2 className="text-lg font-bold text-gray-700">Total Donations</h2>
-              <p className="text-gray-600">125 (↑12%)</p>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
-            <FaChartLine className="text-[#410c31] text-4xl mr-4" />
-            <div>
-              <h2 className="text-lg font-bold text-gray-700">Total Requests</h2>
-              <p className="text-gray-600">89 (↑5%)</p>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
-            <FaClock className="text-[#410c31] text-4xl mr-4" />
-            <div>
-              <h2 className="text-lg font-bold text-gray-700">Pending Requests</h2>
-              <p className="text-gray-600">14 (↓3%)</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ✅ Call-to-Action */}
-      <section className="text-center py-8 bg-[#9c61ac] text-white">
-        <h2 className="text-3xl font-bold">Your Contribution Can Make a Difference</h2>
-        <button className="mt-4 bg-white text-[#410c31] px-6 py-3 rounded-lg font-semibold shadow-md hover:bg-gray-200">
-          Donate Now
+    <div className="flex w-full h-screen overflow-hidden">
+      <DonorSidebar />
+      <div className="flex-1 bg-gray-100 p-10 overflow-y-auto">
+        <h1 className="text-4xl font-bold text-[#3a003c] mb-2">
+          Welcome Back, Donor!
+        </h1>
+        <p className="text-lg text-[#3a003c] mb-6">Want to donate today?</p>
+        <button
+          onClick={() => navigate("/add-donation")}
+          className="bg-[#3a003c] text-white px-5 py-2 rounded-md mb-10"
+        >
+          Enable Donation
         </button>
-      </section>
 
-      {/* ✅ Upcoming Food Drives */}
-      <section className="p-6">
-        <h2 className="text-2xl font-bold text-gray-700 mb-4">Upcoming Food Drives</h2>
-        <div className="bg-white p-6 rounded-lg shadow-md space-y-4">
-          {[
-            { icon: "🍲", name: "Community Potluck", date: "Sat 16 June, Local Park" },
-            { icon: "📜", name: "Food Policy Discussion", date: "Sat 16 June, Community Center" },
-            { icon: "👨‍🍳", name: "Culinary Workshop", date: "Sat 16 June, Local Kitchen" },
-            { icon: "❓", name: "Food Trivia Night", date: "Sat 16 June, Community Hall" },
-            { icon: "🎉", name: "Food Festival", date: "Sat 16 June, Town Square" },
-          ].map((event, index) => (
-            <div key={index} className="flex items-center space-x-4 border-b pb-2">
-              <span className="text-2xl">{event.icon}</span>
-              <div>
-                <h3 className="text-lg font-semibold">{event.name}</h3>
-                <p className="text-gray-600">{event.date}</p>
-              </div>
-            </div>
-          ))}
+        {/* Dashboard Stats */}
+        <div className="grid grid-cols-3 gap-6 mb-10">
+          <div className="bg-white rounded-lg shadow-md p-6 text-center">
+            <h2 className="text-3xl font-bold text-[#3a003c]">
+              {stats.meals_served_today}
+            </h2>
+            <p>Meals Served Today</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-6 text-center">
+            <h2 className="text-3xl font-bold text-[#3a003c]">
+              {stats.people_served}+
+            </h2>
+            <p>People Helped</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-6 text-center">
+            <h2 className="text-3xl font-bold text-[#3a003c]">
+              {stats.average_rating} ⭐
+            </h2>
+            <p>Average Rating</p>
+          </div>
         </div>
-      </section>
+
+        {/* Optional: Recent Donations */}
+        <h2 className="text-2xl font-semibold text-[#3a003c] mb-4">
+          Recent Donations
+        </h2>
+        <ul>
+          {stats.recent_donations?.map((d, index) => (
+            <li key={index} className="bg-white p-4 mb-2 rounded shadow">
+              <strong>{d.food_item}</strong> – {d.quantity} units –{" "}
+              {d.status.toUpperCase()} on {d.created_at}
+            </li>
+          ))}
+        </ul>
+
+        {/* Quick Access Section */}
+        <h2 className="text-2xl font-semibold text-[#3a003c] mt-10 mb-4">
+          Quick Access
+        </h2>
+        <div className="grid grid-cols-2 gap-6">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="font-semibold text-[#3a003c]">🌍 View Impact</h3>
+            <p className="text-gray-600">
+              See how your donations have made a difference.
+            </p>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="font-semibold text-[#3a003c]">💬 Community Feed</h3>
+            <p className="text-gray-600">
+              See messages and updates from NGOs and other donors.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
-}
+};
 
 export default DonorHome;
