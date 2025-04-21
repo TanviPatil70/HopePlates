@@ -1,11 +1,8 @@
+// ReceiverHome.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import ReceiverSidebar from "../Components/ReceiverSidebar";
-import {
-  FaCheckCircle,
-  FaGift,
-  FaTruck,
-  FaSearch,
-} from "react-icons/fa";
+import { FaCheckCircle, FaGift, FaTruck, FaSearch } from "react-icons/fa";
 import {
   BarChart,
   Bar,
@@ -14,7 +11,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import DonorCard from "../Components/DonorCard";
 
 const ReceiverHome = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,9 +20,19 @@ const ReceiverHome = () => {
     { label: "Donations", value: 0 },
     { label: "Pickups", value: 0 },
   ]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const navigate = useNavigate();
 
   const fetchNearbyDonations = async (latitude, longitude) => {
     const token = localStorage.getItem("receiverToken");
+
+    if (!token) {
+      setError("No receiver token found. Please log in again.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch(
@@ -39,10 +45,15 @@ const ReceiverHome = () => {
         }
       );
 
-      const text = await res.text();
-      const data = JSON.parse(text);
+      if (res.status === 401) {
+        throw new Error("Unauthorized. Please log in again.");
+      }
 
-      console.log("Fetched donations:", data);
+      if (!res.ok) {
+        throw new Error(`Request failed with status ${res.status}`);
+      }
+
+      const data = await res.json();
       setDonorsData(data);
 
       const meals = data.reduce((sum, d) => sum + (d.quantity || 0), 0);
@@ -54,33 +65,49 @@ const ReceiverHome = () => {
         { label: "Donations", value: donations },
         { label: "Pickups", value: pickups },
       ]);
+      setLoading(false);
     } catch (error) {
-      console.error("Failed to fetch donations:", error);
+      setError(error.message);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        fetchNearbyDonations(latitude, longitude);
-
-        // Optional: Refresh every 30 seconds
-        const interval = setInterval(() => {
+    const getLocationAndFetch = () => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
           fetchNearbyDonations(latitude, longitude);
-        }, 30000);
 
-        return () => clearInterval(interval);
-      },
-      (err) => {
-        console.error("Geolocation error:", err);
-      }
-    );
+          const interval = setInterval(() => {
+            fetchNearbyDonations(latitude, longitude);
+          }, 30000);
+
+          return () => clearInterval(interval);
+        },
+        (err) => {
+          setError("Geolocation access denied. Please enable location.");
+          setLoading(false);
+        }
+      );
+    };
+
+    getLocationAndFetch();
   }, []);
 
-  const filteredDonors = donorsData.filter((donor) =>
-    donor.donor_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredDonors = donorsData
+    .filter((donor) => donor.status !== "completed")
+    .filter((donor) => {
+      const name = donor.donor_name?.toLowerCase() || "";
+      const location = donor.donor_location?.toLowerCase() || "";
+      const food = donor.food_item?.toLowerCase() || "";
+      const search = searchTerm.toLowerCase();
+      return (
+        name.includes(search) ||
+        location.includes(search) ||
+        food.includes(search)
+      );
+    });
 
   return (
     <div className="flex">
@@ -128,7 +155,7 @@ const ReceiverHome = () => {
             <FaSearch className="absolute left-3 top-2.5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search donor..."
+              placeholder="Search donor, location or food..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm"
@@ -136,15 +163,62 @@ const ReceiverHome = () => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          {filteredDonors.length === 0 ? (
-            <p className="text-gray-500 text-sm">No nearby donors found.</p>
-          ) : (
-            filteredDonors.map((donor, index) => (
-              <DonorCard key={index} donor={donor} />
-            ))
-          )}
-        </div>
+        {loading ? (
+          <p>Loading donations...</p>
+        ) : error ? (
+          <p className="text-red-500">Error: {error}</p>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {filteredDonors.length === 0 ? (
+              <p className="text-gray-500 text-sm">No nearby donors found.</p>
+            ) : (
+              filteredDonors.map((donor, index) => (
+                <div
+                  key={index}
+                  className="bg-white shadow-md rounded-xl p-4 border border-gray-200"
+                >
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-800">
+                        {donor.donor_name}
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        📍 {donor.donor_location || "Location not provided"}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        🍱 Food: {donor.food_item}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Quantity: {donor.quantity}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Status: {" "}
+                        <span
+                          className={
+                            donor.status === "ready"
+                              ? "text-green-600 font-medium"
+                              : "text-gray-400"
+                          }
+                        >
+                          {donor.status}
+                        </span>
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() =>
+                        navigate("/confirm-donation", { state: { donor } })
+                      }
+                      className="mt-3 md:mt-0 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow"
+                    >
+                      View
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

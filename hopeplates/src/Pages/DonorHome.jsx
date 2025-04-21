@@ -26,7 +26,7 @@ const DonorHome = () => {
     const fetchDashboardStats = async () => {
       try {
         const response = await axios.get(
-          "http://127.0.0.1:8000/api/donor/dashboard/",
+          "http://127.0.0.1:8000/api/donor-dashboard-combined/",
           {
             headers: {
               Authorization: `Bearer ${token}`,

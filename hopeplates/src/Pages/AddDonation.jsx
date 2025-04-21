@@ -56,30 +56,30 @@ const AddDonation = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const donationData = {
-        food_item: formData.foodName,
-        quantity: formData.quantity,
-        pickup_location: formData.pickupAddress,
-        description: formData.description,
-        contact_number: formData.contactNumber,
-      };
+      food_item: formData.foodName,
+      quantity: formData.quantity,
+      pickup_location: formData.pickupAddress,
+      description: formData.description,
+      contact_number: formData.contactNumber,
+    };
     const token = localStorage.getItem("token");
 
     if (!token) {
       toast.error("Please log in to submit a donation.");
       return;
     }
-    console.log("Token used:", localStorage.getItem("token"));
+
     try {
-        await axios.post(
-            "http://127.0.0.1:8000/api/donations/",
-            donationData,
-            {
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
+      await axios.post(
+        "http://127.0.0.1:8000/api/donations/",
+        donationData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       toast.success("Donation submitted successfully!");
       navigate("/donor-home");

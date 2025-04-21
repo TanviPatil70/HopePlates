@@ -10,6 +10,9 @@ import ImpactTracker from "./Pages/ImpactTracker";
 import CommunityFeed from "./Pages/CommunityFeed";
 import ReceiverRegister from "./Pages/ReceiverRegister"; 
 import ConfirmDonation from "./Pages/ConfirmDonation";
+import AddShelter from "./Pages/AddShelter";
+import ContactDelivery from "./Pages/ContactDelivery";
+import AddDeliveryPartner from "./Pages/AddDeliveryPartner";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -30,6 +33,10 @@ function App() {
         <Route path="/impact-tracker" element={<ImpactTracker />} />
         <Route path="/community-feed" element={<CommunityFeed />} />
         <Route path="/confirm-donation" element={<ConfirmDonation />} />
+        <Route path="/confirm-donation/:donationId" element={<ConfirmDonation />} />
+        <Route path="/add-shelter" element={<AddShelter />} />
+        <Route path="/contact-delivery" element={<ContactDelivery />} />
+        <Route path="/add-delivery-partner" element={<AddDeliveryPartner />} />
       </Routes>
 
       {/* ✅ ToastContainer placed correctly outside Routes */}
